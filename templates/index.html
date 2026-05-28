@@ -1,13 +1,531 @@
 <!DOCTYPE html>
-<html>
-    <head>
-    <title>Song Downloader</title>
-    </head>
-    <body>
-        <h2>Paste Spotify Link</h2>
-        <form action="/download" method="post">
-            <input type ="text" name="video_url" placeholder="Paste link here" size="50" required>
-            <button type="submit">Upload</button>
-        </form>
-    </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SoundSpy — Song Recognition</title>
+  <meta name="description" content="Identify any song playing around you in seconds using audio fingerprinting technology." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Base ───────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0a0f;
+      --surface:   #13131f;
+      --card:      rgba(255,255,255,0.04);
+      --border:    rgba(255,255,255,0.08);
+      --accent:    #7c6af7;
+      --accent2:   #a78bfa;
+      --green:     #34d399;
+      --red:       #f87171;
+      --text:      #f1f1f8;
+      --muted:     #6b7280;
+      --radius:    20px;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── Background orbs ───────────────────────────────── */
+    .bg-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.18;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb1 { width: 600px; height: 600px; background: #7c6af7; top: -200px; left: -150px; }
+    .orb2 { width: 500px; height: 500px; background: #06b6d4; bottom: -150px; right: -100px; }
+    .orb3 { width: 300px; height: 300px; background: #a78bfa; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+
+    /* ── Layout ─────────────────────────────────────────── */
+    .page { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 40px 20px 80px; }
+
+    /* ── Header ─────────────────────────────────────────── */
+    header { text-align: center; margin-bottom: 48px; }
+    .logo { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .logo-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #06b6d4);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; box-shadow: 0 0 30px rgba(124,106,247,0.4);
+    }
+    .logo-text { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #fff, var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    header p { color: var(--muted); font-size: 0.95rem; max-width: 360px; margin: 0 auto; line-height: 1.6; }
+
+    /* ── Tabs ───────────────────────────────────────────── */
+    .tabs {
+      display: flex; gap: 6px; background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 5px; margin-bottom: 32px; backdrop-filter: blur(10px);
+    }
+    .tab-btn {
+      flex: 1; padding: 10px 28px; border: none; border-radius: 10px; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600;
+      transition: all 0.25s ease; color: var(--muted); background: transparent;
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--accent), #6054d0);
+      color: #fff; box-shadow: 0 4px 20px rgba(124,106,247,0.4);
+    }
+    .tab-btn:not(.active):hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+    /* ── Card ───────────────────────────────────────────── */
+    .card {
+      width: 100%; max-width: 520px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); backdrop-filter: blur(16px);
+      padding: 36px; display: none;
+    }
+    .card.active { display: block; }
+
+    /* ── Recognize Tab ──────────────────────────────────── */
+    .mic-area { display: flex; flex-direction: column; align-items: center; gap: 28px; }
+
+    .mic-btn {
+      position: relative; width: 140px; height: 140px; border-radius: 50%;
+      border: none; cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), #06b6d4);
+      box-shadow: 0 0 0 0 rgba(124,106,247,0.5);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mic-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 0 40px rgba(124,106,247,0.5); }
+    .mic-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .mic-btn svg { width: 52px; height: 52px; fill: #fff; transition: all 0.3s; }
+
+    /* Pulse ring when recording */
+    .mic-btn.recording {
+      animation: pulseRing 1.4s ease-out infinite;
+      background: linear-gradient(135deg, var(--red), #f43f5e);
+    }
+    @keyframes pulseRing {
+      0%   { box-shadow: 0 0 0 0 rgba(248,113,113,0.6); }
+      70%  { box-shadow: 0 0 0 30px rgba(248,113,113,0); }
+      100% { box-shadow: 0 0 0 0 rgba(248,113,113,0); }
+    }
+
+    /* Waveform bars */
+    .waveform { display: flex; align-items: center; gap: 4px; height: 48px; opacity: 0; transition: opacity 0.3s; }
+    .waveform.visible { opacity: 1; }
+    .waveform .bar {
+      width: 4px; background: linear-gradient(to top, var(--accent), var(--accent2));
+      border-radius: 4px; min-height: 4px;
+      animation: wave 0.8s ease-in-out infinite alternate;
+    }
+    .waveform .bar:nth-child(1)  { animation-delay: 0s;    }
+    .waveform .bar:nth-child(2)  { animation-delay: 0.1s;  }
+    .waveform .bar:nth-child(3)  { animation-delay: 0.2s;  }
+    .waveform .bar:nth-child(4)  { animation-delay: 0.3s;  }
+    .waveform .bar:nth-child(5)  { animation-delay: 0.15s; }
+    .waveform .bar:nth-child(6)  { animation-delay: 0.05s; }
+    .waveform .bar:nth-child(7)  { animation-delay: 0.25s; }
+    .waveform .bar:nth-child(8)  { animation-delay: 0.35s; }
+    .waveform .bar:nth-child(9)  { animation-delay: 0.1s;  }
+    .waveform .bar:nth-child(10) { animation-delay: 0.2s;  }
+    .waveform .bar:nth-child(11) { animation-delay: 0.3s;  }
+    .waveform .bar:nth-child(12) { animation-delay: 0s;    }
+    @keyframes wave {
+      from { height: 6px; }
+      to   { height: 42px; }
+    }
+
+    .status-text { font-size: 0.95rem; color: var(--muted); text-align: center; min-height: 24px; transition: all 0.3s; }
+    .status-text.active-status { color: var(--accent2); }
+
+    /* Countdown ring */
+    .countdown-wrap { position: relative; width: 140px; height: 140px; display: none; }
+    .countdown-wrap.show { display: flex; align-items: center; justify-content: center; }
+    .countdown-svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+    .countdown-circle { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round;
+      stroke-dasharray: 408; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear; }
+    .countdown-num { font-size: 2.4rem; font-weight: 700; color: var(--text); }
+
+    /* Result card */
+    .result-box {
+      width: 100%; background: rgba(124,106,247,0.08); border: 1px solid rgba(124,106,247,0.25);
+      border-radius: 16px; padding: 24px; display: none; animation: fadeUp 0.4s ease;
+    }
+    .result-box.show { display: block; }
+    .result-box.error-box { background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.25); }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+    .result-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    .result-title { font-size: 1.5rem; font-weight: 700; line-height: 1.3; margin-bottom: 4px; }
+    .result-artist { font-size: 1rem; color: var(--accent2); font-weight: 500; margin-bottom: 16px; }
+    .result-meta { display: flex; gap: 16px; flex-wrap: wrap; }
+    .result-meta span { font-size: 0.78rem; color: var(--muted); background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 20px; }
+    .yt-link {
+      display: inline-flex; align-items: center; gap: 7px; margin-top: 16px;
+      padding: 9px 18px; border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+      background: linear-gradient(135deg, #ff0000, #cc0000); color: #fff;
+      text-decoration: none; transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .yt-link:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,0,0,0.3); }
+    .error-msg { color: var(--red); font-size: 0.95rem; }
+
+    /* ── Add Song Tab ────────────────────────────────────── */
+    .add-form { display: flex; flex-direction: column; gap: 18px; }
+    .form-label { font-size: 0.82rem; font-weight: 600; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; }
+    .form-input {
+      width: 100%; padding: 14px 18px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      border-radius: 12px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.95rem;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-input::placeholder { color: var(--muted); }
+    .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,106,247,0.15); }
+
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+    .example-chip {
+      padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; cursor: pointer;
+      background: rgba(124,106,247,0.1); border: 1px solid rgba(124,106,247,0.2);
+      color: var(--accent2); transition: all 0.2s;
+    }
+    .example-chip:hover { background: rgba(124,106,247,0.2); border-color: var(--accent); }
+
+    .submit-btn {
+      padding: 15px; border-radius: 12px; border: none; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), #6054d0);
+      color: #fff; transition: all 0.2s; box-shadow: 0 4px 20px rgba(124,106,247,0.3);
+    }
+    .submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,106,247,0.45); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .add-result { display: none; }
+    .add-result.show { display: block; animation: fadeUp 0.4s ease; }
+    .add-success { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-radius: 12px;
+      background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); color: var(--green); font-weight: 500; }
+    .add-error { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-radius: 12px;
+      background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--red); font-weight: 500; }
+
+    /* Progress bar */
+    .progress-bar-wrap { height: 4px; border-radius: 4px; background: rgba(255,255,255,0.07); overflow: hidden; display: none; }
+    .progress-bar-wrap.show { display: block; }
+    .progress-bar { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2));
+      width: 0%; transition: width 0.4s ease; animation: progressPulse 1.8s ease-in-out infinite; }
+    @keyframes progressPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+    /* ── Footer ─────────────────────────────────────────── */
+    footer { margin-top: 48px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+    footer a { color: var(--accent2); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <!-- Background -->
+  <div class="bg-orb orb1"></div>
+  <div class="bg-orb orb2"></div>
+  <div class="bg-orb orb3"></div>
+
+  <div class="page">
+    <!-- Header -->
+    <header>
+      <div class="logo">
+        <div class="logo-icon">🎵</div>
+        <span class="logo-text">SoundSpy</span>
+      </div>
+      <p>Identify any song in seconds using audio fingerprinting — or add songs to the library.</p>
+    </header>
+
+    <!-- Tabs -->
+    <div class="tabs" role="tablist">
+      <button class="tab-btn active" id="tab-recognize" role="tab" onclick="switchTab('recognize')">🎤 Recognize</button>
+      <button class="tab-btn"        id="tab-add"       role="tab" onclick="switchTab('add')">➕ Add Song</button>
+    </div>
+
+    <!-- ── Recognize Card ───────────────────────────────── -->
+    <div class="card active" id="panel-recognize" role="tabpanel">
+      <div class="mic-area">
+
+        <!-- Mic button -->
+        <button class="mic-btn" id="micBtn" onclick="toggleRecording()" aria-label="Start listening">
+          <svg id="micIcon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 1a4 4 0 0 1 4 4v7a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm0 2a2 2 0 0 0-2 2v7a2 2 0 0 0 4 0V5a2 2 0 0 0-2-2zm-1 15.93V21h2v-2.07A7.001 7.001 0 0 0 19 12h-2a5 5 0 0 1-10 0H5a7.001 7.001 0 0 0 6 6.93z"/>
+          </svg>
+        </button>
+
+        <!-- Waveform (visible during recording) -->
+        <div class="waveform" id="waveform">
+          <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+          <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+          <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+          <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        </div>
+
+        <p class="status-text" id="statusText">Tap the mic to start listening</p>
+
+        <!-- Result -->
+        <div class="result-box" id="resultBox">
+          <div class="result-label">🎵 Match Found</div>
+          <div class="result-title" id="resTitle">—</div>
+          <div class="result-artist" id="resArtist">—</div>
+          <div class="result-meta">
+            <span id="resScore"></span>
+            <span id="resTime"></span>
+          </div>
+          <a class="yt-link" id="resYtLink" href="#" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15.3a6.34 6.34 0 0 0 6.34 6.35 6.34 6.34 0 0 0 6.34-6.35V8.69a8.28 8.28 0 0 0 4.84 1.54V6.79a4.86 4.86 0 0 1-1.08-.1z"/></svg>
+            Watch on YouTube
+          </a>
+        </div>
+
+        <!-- Error -->
+        <div class="result-box error-box" id="errorBox">
+          <div class="result-label">⚠ Error</div>
+          <div class="error-msg" id="errorMsg">—</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Add Song Card ─────────────────────────────────── -->
+    <div class="card" id="panel-add" role="tabpanel">
+      <div class="add-form">
+        <div>
+          <div class="form-label">Song Query or Deezer URL</div>
+          <input
+            class="form-input"
+            id="songQuery"
+            type="text"
+            placeholder="e.g.  Blinding Lights The Weeknd"
+            autocomplete="off"
+          />
+          <div class="examples" style="margin-top:10px;">
+            <span class="example-chip" onclick="fillExample('Bohemian Rhapsody Queen')">Bohemian Rhapsody Queen</span>
+            <span class="example-chip" onclick="fillExample('Shape of You Ed Sheeran')">Shape of You Ed Sheeran</span>
+            <span class="example-chip" onclick="fillExample('https://www.deezer.com/track/3135556')">Deezer URL</span>
+          </div>
+        </div>
+
+        <div class="progress-bar-wrap" id="progressWrap">
+          <div class="progress-bar" id="progressBar" style="width:0%"></div>
+        </div>
+
+        <div class="add-result" id="addResult"></div>
+
+        <button class="submit-btn" id="addBtn" onclick="addSong()">Add &amp; Fingerprint Song</button>
+      </div>
+    </div>
+
+    <footer>
+      Built with ❤️ · Audio fingerprinting powered by <a href="#">SoundSpy</a>
+    </footer>
+  </div>
+
+  <script>
+    // ── Tab switching ─────────────────────────────────────
+    function switchTab(name) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      document.getElementById('panel-' + name).classList.add('active');
+    }
+
+    // ── Recognize ─────────────────────────────────────────
+    let mediaRecorder = null;
+    let audioChunks   = [];
+    let recording     = false;
+    const RECORD_SECS = 10;
+
+    function toggleRecording() {
+      if (recording) return; // prevent double-click mid-record
+      startRecording();
+    }
+
+    async function startRecording() {
+      recording = true;
+      audioChunks = [];
+      hideResults();
+
+      const btn    = document.getElementById('micBtn');
+      const status = document.getElementById('statusText');
+      const wave   = document.getElementById('waveform');
+
+      btn.classList.add('recording');
+      wave.classList.add('visible');
+      status.textContent = `Listening… (${RECORD_SECS}s)`;
+      status.classList.add('active-status');
+
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch(e) {
+        showError('Microphone access denied. Please allow mic access and try again.');
+        resetUI();
+        return;
+      }
+
+      const mimeType = MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')
+        ? 'audio/ogg;codecs=opus'
+        : 'audio/webm;codecs=opus';
+
+      mediaRecorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        await sendAudio(mimeType);
+      };
+      mediaRecorder.start(200);
+
+      // Countdown in status
+      let remaining = RECORD_SECS;
+      const timer = setInterval(() => {
+        remaining--;
+        if (remaining > 0) {
+          status.textContent = `Listening… (${remaining}s)`;
+        } else {
+          clearInterval(timer);
+        }
+      }, 1000);
+
+      setTimeout(() => {
+        clearInterval(timer);
+        if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
+      }, RECORD_SECS * 1000);
+    }
+
+    async function sendAudio(mimeType) {
+      const status = document.getElementById('statusText');
+      const wave   = document.getElementById('waveform');
+      wave.classList.remove('visible');
+      status.textContent = 'Analyzing audio…';
+
+      const ext  = mimeType.includes('ogg') ? 'ogg' : 'webm';
+      const blob = new Blob(audioChunks, { type: mimeType });
+      const form = new FormData();
+      form.append('file', blob, `recording.${ext}`);
+
+      try {
+        const resp = await fetch('/recognize', { method: 'POST', body: form });
+        const data = await resp.json();
+        if (!resp.ok || data.error) {
+          showError(data.error || 'No match found. Try again with a clearer audio clip.');
+        } else {
+          showResult(data);
+        }
+      } catch(e) {
+        showError('Network error. Make sure the server is running.');
+      } finally {
+        resetUI();
+      }
+    }
+
+    function showResult(data) {
+      document.getElementById('resTitle').textContent  = data.title  || 'Unknown';
+      document.getElementById('resArtist').textContent = data.artist || 'Unknown';
+      document.getElementById('resScore').textContent  = `Score: ${data.score}`;
+      document.getElementById('resTime').textContent   = `${data.elapsed}s`;
+
+      const ytLink = document.getElementById('resYtLink');
+      if (data.youtube_id) {
+        ytLink.href = `https://www.youtube.com/watch?v=${data.youtube_id}`;
+        ytLink.style.display = 'inline-flex';
+      } else {
+        ytLink.style.display = 'none';
+      }
+
+      document.getElementById('resultBox').classList.add('show');
+      document.getElementById('statusText').textContent = '✅ Match found!';
+      document.getElementById('statusText').classList.remove('active-status');
+    }
+
+    function showError(msg) {
+      document.getElementById('errorMsg').textContent = msg;
+      document.getElementById('errorBox').classList.add('show');
+      document.getElementById('statusText').textContent = 'Something went wrong';
+      document.getElementById('statusText').classList.remove('active-status');
+    }
+
+    function hideResults() {
+      document.getElementById('resultBox').classList.remove('show');
+      document.getElementById('errorBox').classList.remove('show');
+    }
+
+    function resetUI() {
+      recording = false;
+      const btn = document.getElementById('micBtn');
+      btn.classList.remove('recording');
+      document.getElementById('waveform').classList.remove('visible');
+      if (!document.getElementById('resultBox').classList.contains('show') &&
+          !document.getElementById('errorBox').classList.contains('show')) {
+        document.getElementById('statusText').textContent = 'Tap the mic to start listening';
+        document.getElementById('statusText').classList.remove('active-status');
+      }
+    }
+
+    // ── Add Song ──────────────────────────────────────────
+    function fillExample(text) {
+      document.getElementById('songQuery').value = text;
+    }
+
+    async function addSong() {
+      const query   = document.getElementById('songQuery').value.trim();
+      const btn     = document.getElementById('addBtn');
+      const result  = document.getElementById('addResult');
+      const progW   = document.getElementById('progressWrap');
+      const progBar = document.getElementById('progressBar');
+
+      if (!query) {
+        result.innerHTML = '<div class="add-error">⚠ Please enter a song name or Deezer URL.</div>';
+        result.classList.add('show');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Processing…';
+      result.classList.remove('show');
+      progW.classList.add('show');
+
+      // Animate progress bar to 90% while waiting
+      let prog = 0;
+      const progTimer = setInterval(() => {
+        prog = Math.min(prog + Math.random() * 8, 88);
+        progBar.style.width = prog + '%';
+      }, 600);
+
+      try {
+        const resp = await fetch('/add-song', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query })
+        });
+        const data = await resp.json();
+        clearInterval(progTimer);
+        progBar.style.width = '100%';
+
+        setTimeout(() => { progW.classList.remove('show'); progBar.style.width = '0%'; }, 600);
+
+        if (!resp.ok || data.error) {
+          result.innerHTML = `<div class="add-error">⚠ ${data.error}</div>`;
+        } else {
+          result.innerHTML = `<div class="add-success">✅ ${data.status}</div>`;
+          document.getElementById('songQuery').value = '';
+        }
+        result.classList.add('show');
+      } catch(e) {
+        clearInterval(progTimer);
+        result.innerHTML = '<div class="add-error">⚠ Network error. Is the server running?</div>';
+        result.classList.add('show');
+        progW.classList.remove('show');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Add & Fingerprint Song';
+      }
+    }
+
+    // Allow Enter key on input
+    document.getElementById('songQuery').addEventListener('keydown', e => {
+      if (e.key === 'Enter') addSong();
+    });
+  </script>
+</body>
 </html>

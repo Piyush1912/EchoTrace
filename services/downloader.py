@@ -6,49 +6,48 @@ import time
 from pathlib import Path
 
 from database.client import new_db_client
-from data.download_songs.utilsD import delete_file, song_key_exists
 from core.fingerprint import fingerprint_audio
 from web.utils.utils import generate_song_key
 
-from services.spotify import album_info, playlist_info, track_info
+from services.music_metadata import (
+    Track,
+    get_track_info,
+    get_playlist_tracks,
+    get_album_tracks,
+)
 from services.youtube import download_ytaudio, get_youtube_id
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("spotify")
+logger = logging.getLogger(__name__)
 
 DELETE_SONG_FILE = False
 
 
-class Track:
-    def __init__(self, title, artist, album=None, duration=None, artists=None):
-        self.title = title
-        self.artist = artist
-        self.album = album
-        self.duration = duration
-        self.artists = artists or []
+# Track is imported from services.music_metadata — no duplicate needed
 
 
-def dl_single_track(url, save_path):
-    logger.info("Getting track info", extra={"url": url})
-    track_in = track_info(url)
-    tracks = [track_in]
-    logger.info("Now downloading track")
-    return dl_tracks(tracks, save_path)
+def dl_single_track(url_or_query, save_path):
+    """Download a single track. Accepts a Deezer URL or a 'Title - Artist' text search."""
+    logger.info(f"Getting track info for: {url_or_query}")
+    track_in = get_track_info(url_or_query)
+    if not track_in:
+        raise ValueError(f"Could not find track metadata for: {url_or_query}")
+    return dl_tracks([track_in], save_path)
 
 
 def dl_playlist(url, save_path):
-    logger.info("Getting playlist info", extra={"url": url})
-    tracks = playlist_info(url)  # placeholder
-    time.sleep(1)
-    logger.info("Now downloading playlist")
+    """Download all tracks from a Deezer playlist URL."""
+    logger.info(f"Getting playlist info for: {url}")
+    tracks = get_playlist_tracks(url)
+    logger.info(f"Found {len(tracks)} tracks in playlist")
     return dl_tracks(tracks, save_path)
 
 
 def dl_album(url, save_path):
-    logger.info("Getting album info", extra={"url": url})
-    tracks = album_info(url)  # placeholder
-    time.sleep(1)
-    logger.info("Now downloading album")
+    """Download all tracks from a Deezer album URL."""
+    logger.info(f"Getting album info for: {url}")
+    tracks = get_album_tracks(url)
+    logger.info(f"Found {len(tracks)} tracks in album")
     return dl_tracks(tracks, save_path)
 
 
@@ -71,7 +70,7 @@ def process_track(track, path):
             logger.info(f"'{track.title}' by '{track.artist}' already exists.")
             return False
 
-        yt_id = get_youtube_id(track)
+        yt_id = get_youtube_id(track.title, track.artist, track.duration)
         if not yt_id:
             logger.error(f"'{track.title}' by '{track.artist}' could not be downloaded")
             return False

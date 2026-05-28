@@ -34,7 +34,7 @@ def new_db_client():
         raise NotImplementedError("MongoDB client not implemented yet")
 
     elif DB_TYPE == "sqlite":
-        return SQLiteClient("db/db.sqlite3")
+        return SQLiteClient("data/db.sqlite3")
 
     else:
         raise ValueError(f"Unsupported database type: {DB_TYPE}")

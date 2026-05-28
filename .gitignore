@@ -1,1 +1,41 @@
+# Environment & secrets
 .env
+token.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Virtual environments
+myenv/
+venv/
+env/
+.venv/
+
+# Database files
+*.db
+*.sqlite3
+
+# Downloaded / uploaded audio files
+data/downloaded_songs/
+data/download_songs/
+data/uploads/
+data/tmp/
+downloaded_songs/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Zip artifacts (don't commit compiled packages)
+*.zip
