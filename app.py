@@ -1,8 +1,11 @@
 import subprocess
+from dotenv import load_dotenv
 
+# 1. LOAD THIS FIRST!
+load_dotenv()
 from flask import Flask, render_template, request
 
-from fromLinkDownload import downloadViaLink
+from services.fromLinkDownload import downloadViaLink
 
 app = Flask(__name__)
 
