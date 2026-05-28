@@ -57,17 +57,67 @@ def recognize():
             os.remove(filepath)
 
 
+# ── Songs library: list all ───────────────────────────────────────────────────
+
+@app.route("/songs", methods=["GET"])
+def list_songs():
+    try:
+        from database.client import new_db_client
+        db = new_db_client()
+        songs = db.get_all_songs()
+        db.close()
+        return jsonify({"songs": songs, "total": len(songs)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ── Search Songs: iTunes suggestion search ────────────────────────────────────
+
+@app.route("/search-songs", methods=["GET"])
+def search_songs():
+    q = request.args.get("q", "").strip()
+    if len(q) < 2:
+        return jsonify({"results": []})
+    try:
+        from services.music_metadata import itunes_search_track
+        tracks = itunes_search_track(q, limit=8)
+        return jsonify({
+            "results": [
+                {
+                    "title": t.title,
+                    "artist": t.artist,
+                    "album": t.album,
+                    "duration_sec": t.duration_sec
+                }
+                for t in tracks
+            ]
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ── Ingest: Deezer URL or text → download + fingerprint ──────────────────────
 
 @app.route("/add-song", methods=["POST"])
 def add_song():
     data = request.get_json(silent=True) or {}
     query = data.get("query", "").strip()
-    if not query:
-        return jsonify({"error": "No song query provided"}), 400
+    title = data.get("title", "").strip()
+    artist = data.get("artist", "").strip()
+    duration_sec = data.get("duration_sec")
+
+    if not query and not (title and artist):
+        return jsonify({"error": "No song query or metadata provided"}), 400
 
     try:
-        downloadViaLink(query)
+        if title and artist:
+            try:
+                ds = int(duration_sec) if duration_sec is not None else None
+            except (ValueError, TypeError):
+                ds = None
+            downloadViaLink(query or f"{title} {artist}", title=title, artist=artist, duration_sec=ds)
+        else:
+            downloadViaLink(query)
         return jsonify({"status": "Song added and fingerprinted successfully!"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

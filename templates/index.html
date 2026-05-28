@@ -184,6 +184,97 @@
     .form-input::placeholder { color: var(--muted); }
     .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,106,247,0.15); }
 
+    /* Suggestions dropdown */
+    .suggestions-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: rgba(19, 19, 31, 0.96);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      max-height: 250px;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
+      display: none;
+      padding: 6px 0;
+    }
+    .suggestions-dropdown.show {
+      display: block;
+      animation: fadeUp 0.2s ease;
+    }
+    .suggestion-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+      transition: background 0.2s;
+    }
+    .suggestion-item:last-child {
+      border-bottom: none;
+    }
+    .suggestion-item:hover {
+      background: rgba(124, 106, 247, 0.15);
+    }
+    .suggestion-info {
+      flex: 1;
+      min-width: 0;
+      margin-right: 12px;
+    }
+    .suggestion-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .suggestion-artist {
+      font-size: 0.78rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+    .suggestion-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .suggestion-duration {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .suggestion-dl-btn {
+      background: rgba(124, 106, 247, 0.15);
+      border: 1px solid rgba(124, 106, 247, 0.3);
+      color: var(--accent2);
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .suggestion-dl-btn:hover {
+      background: var(--accent);
+      color: #fff;
+      transform: scale(1.05);
+    }
+    .suggestion-dl-btn svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+
     .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
     .example-chip {
       padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; cursor: pointer;
@@ -214,6 +305,72 @@
     .progress-bar { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2));
       width: 0%; transition: width 0.4s ease; animation: progressPulse 1.8s ease-in-out infinite; }
     @keyframes progressPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+    /* ── Library ─────────────────────────────────────────── */
+    .library-section { margin-top: 28px; }
+    .library-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .library-title { font-size: 0.82rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.8px; color: var(--muted); display: flex; align-items: center; gap: 7px; }
+    .library-count {
+      font-size: 0.72rem; padding: 2px 9px; border-radius: 20px;
+      background: rgba(124,106,247,0.15); color: var(--accent2); font-weight: 600;
+    }
+    .library-refresh {
+      background: none; border: none; color: var(--muted); cursor: pointer;
+      font-size: 1rem; padding: 4px; border-radius: 6px; transition: all 0.2s;
+      line-height: 1;
+    }
+    .library-refresh:hover { color: var(--accent2); background: rgba(124,106,247,0.1); }
+    .library-refresh.spinning { animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .library-search {
+      width: 100%; padding: 10px 14px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.88rem;
+      outline: none; transition: border-color 0.2s; margin-bottom: 12px;
+    }
+    .library-search::placeholder { color: var(--muted); }
+    .library-search:focus { border-color: var(--accent); }
+
+    .song-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto;
+      padding-right: 4px; }
+    .song-list::-webkit-scrollbar { width: 4px; }
+    .song-list::-webkit-scrollbar-track { background: transparent; }
+    .song-list::-webkit-scrollbar-thumb { background: rgba(124,106,247,0.3); border-radius: 4px; }
+
+    .song-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 14px; border-radius: 12px;
+      background: rgba(255,255,255,0.03); border: 1px solid transparent;
+      transition: all 0.18s; cursor: default;
+      animation: fadeUp 0.3s ease;
+    }
+    .song-item:hover { background: rgba(124,106,247,0.07); border-color: rgba(124,106,247,0.15); }
+    .song-num {
+      width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+      background: rgba(124,106,247,0.12); color: var(--accent2);
+      font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    }
+    .song-info { flex: 1; min-width: 0; }
+    .song-name { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .song-artist { font-size: 0.78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .song-yt {
+      flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px;
+      background: rgba(255,0,0,0.12); display: flex; align-items: center; justify-content: center;
+      text-decoration: none; transition: background 0.2s;
+    }
+    .song-yt:hover { background: rgba(255,0,0,0.25); }
+    .song-yt svg { width: 13px; height: 13px; fill: #f87171; }
+
+    .library-empty { text-align: center; padding: 28px 0; color: var(--muted); font-size: 0.88rem; }
+    .library-empty span { display: block; font-size: 2rem; margin-bottom: 8px; }
+    .library-skeleton { height: 50px; border-radius: 12px; background: rgba(255,255,255,0.04);
+      animation: shimmer 1.4s ease-in-out infinite; margin-bottom: 8px; }
+    @keyframes shimmer { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
 
     /* ── Footer ─────────────────────────────────────────── */
     footer { margin-top: 48px; text-align: center; color: var(--muted); font-size: 0.82rem; }
@@ -292,13 +449,16 @@
       <div class="add-form">
         <div>
           <div class="form-label">Song Query or Deezer URL</div>
-          <input
-            class="form-input"
-            id="songQuery"
-            type="text"
-            placeholder="e.g.  Blinding Lights The Weeknd"
-            autocomplete="off"
-          />
+          <div style="position: relative;">
+            <input
+              class="form-input"
+              id="songQuery"
+              type="text"
+              placeholder="e.g.  Blinding Lights The Weeknd"
+              autocomplete="off"
+            />
+            <div class="suggestions-dropdown" id="suggestionsDropdown"></div>
+          </div>
           <div class="examples" style="margin-top:10px;">
             <span class="example-chip" onclick="fillExample('Bohemian Rhapsody Queen')">Bohemian Rhapsody Queen</span>
             <span class="example-chip" onclick="fillExample('Shape of You Ed Sheeran')">Shape of You Ed Sheeran</span>
@@ -314,6 +474,30 @@
 
         <button class="submit-btn" id="addBtn" onclick="addSong()">Add &amp; Fingerprint Song</button>
       </div>
+
+      <!-- ── Song Library ─────────────────────────────────── -->
+      <div class="library-section">
+        <div class="library-header">
+          <div class="library-title">
+            🎶 Library
+            <span class="library-count" id="libraryCount">0 songs</span>
+          </div>
+          <button class="library-refresh" id="refreshBtn" onclick="loadSongs()" title="Refresh">↻</button>
+        </div>
+        <input
+          class="library-search"
+          id="librarySearch"
+          type="text"
+          placeholder="🔍  Filter songs…"
+          oninput="filterSongs()"
+        />
+        <div class="song-list" id="songList">
+          <!-- Skeleton loaders -->
+          <div class="library-skeleton"></div>
+          <div class="library-skeleton"></div>
+          <div class="library-skeleton"></div>
+        </div>
+      </div>
     </div>
 
     <footer>
@@ -328,6 +512,10 @@
       document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
       document.getElementById('tab-' + name).classList.add('active');
       document.getElementById('panel-' + name).classList.add('active');
+      // Auto-load library when switching to Add tab
+      if (name === 'add' && allSongs.length === 0) loadSongs();
+      // Hide suggestions if search tab changes
+      if (typeof hideSuggestions === 'function') hideSuggestions();
     }
 
     // ── Recognize ─────────────────────────────────────────
@@ -463,22 +651,142 @@
     }
 
     // ── Add Song ──────────────────────────────────────────
+    let selectedTrack = null;
+
     function fillExample(text) {
       document.getElementById('songQuery').value = text;
+      selectedTrack = null;
+      hideSuggestions();
+    }
+
+    function hideSuggestions() {
+      const dropdown = document.getElementById('suggestionsDropdown');
+      dropdown.classList.remove('show');
+      dropdown.innerHTML = '';
+    }
+
+    let searchTimeout = null;
+    document.getElementById('songQuery').addEventListener('input', (e) => {
+      selectedTrack = null;
+      const q = e.target.value.trim();
+      clearTimeout(searchTimeout);
+      
+      if (q.length < 2 || q.startsWith('http://') || q.startsWith('https://')) {
+        hideSuggestions();
+        return;
+      }
+      
+      searchTimeout = setTimeout(() => {
+        fetchSuggestions(q);
+      }, 300);
+    });
+
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('suggestionsDropdown');
+      const input = document.getElementById('songQuery');
+      if (e.target !== dropdown && e.target !== input && !dropdown.contains(e.target)) {
+        hideSuggestions();
+      }
+    });
+
+    document.getElementById('songQuery').addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        hideSuggestions();
+      } else if (e.key === 'Enter') {
+        addSong();
+      }
+    });
+
+    async function fetchSuggestions(q) {
+      try {
+        const resp = await fetch(`/search-songs?q=${encodeURIComponent(q)}`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const results = data.results || [];
+        if (results.length === 0) {
+          hideSuggestions();
+          return;
+        }
+        renderSuggestions(results);
+      } catch (e) {
+        console.error("Error fetching suggestions:", e);
+      }
+    }
+
+    function renderSuggestions(tracks) {
+      const dropdown = document.getElementById('suggestionsDropdown');
+      dropdown.innerHTML = tracks.map((t, i) => {
+        const durationStr = formatDuration(t.duration_sec);
+        const trackData = JSON.stringify(t).replace(/"/g, '&quot;');
+        return `
+          <div class="suggestion-item" onclick="selectSuggestion(${trackData})">
+            <div class="suggestion-info">
+              <div class="suggestion-name" title="${esc(t.title)}">${esc(t.title)}</div>
+              <div class="suggestion-artist" title="${esc(t.artist)} - ${esc(t.album)}">${esc(t.artist)} ${t.album ? `· ${esc(t.album)}` : ''}</div>
+            </div>
+            <div class="suggestion-meta">
+              <span class="suggestion-duration">${durationStr}</span>
+              <button class="suggestion-dl-btn" title="Download directly" onclick="event.stopPropagation(); downloadSuggestion(${trackData})">
+                <svg viewBox="0 0 24 24"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      dropdown.classList.add('show');
+    }
+
+    function formatDuration(sec) {
+      if (!sec) return '0:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function selectSuggestion(track) {
+      selectedTrack = track;
+      document.getElementById('songQuery').value = `${track.artist} - ${track.title}`;
+      hideSuggestions();
+    }
+
+    async function downloadSuggestion(track) {
+      hideSuggestions();
+      document.getElementById('songQuery').value = `${track.artist} - ${track.title}`;
+      
+      const payload = {
+        query: `${track.artist} - ${track.title}`,
+        title: track.title,
+        artist: track.artist,
+        duration_sec: track.duration_sec
+      };
+      await performAddSong(payload);
     }
 
     async function addSong() {
-      const query   = document.getElementById('songQuery').value.trim();
-      const btn     = document.getElementById('addBtn');
-      const result  = document.getElementById('addResult');
-      const progW   = document.getElementById('progressWrap');
-      const progBar = document.getElementById('progressBar');
-
+      const query = document.getElementById('songQuery').value.trim();
       if (!query) {
+        const result = document.getElementById('addResult');
         result.innerHTML = '<div class="add-error">⚠ Please enter a song name or Deezer URL.</div>';
         result.classList.add('show');
         return;
       }
+
+      let payload = { query };
+      if (selectedTrack && query === `${selectedTrack.artist} - ${selectedTrack.title}`) {
+        payload.title = selectedTrack.title;
+        payload.artist = selectedTrack.artist;
+        payload.duration_sec = selectedTrack.duration_sec;
+      }
+      
+      hideSuggestions();
+      await performAddSong(payload);
+    }
+
+    async function performAddSong(payload) {
+      const btn     = document.getElementById('addBtn');
+      const result  = document.getElementById('addResult');
+      const progW   = document.getElementById('progressWrap');
+      const progBar = document.getElementById('progressBar');
 
       btn.disabled = true;
       btn.textContent = 'Processing…';
@@ -496,7 +804,7 @@
         const resp = await fetch('/add-song', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query })
+          body: JSON.stringify(payload)
         });
         const data = await resp.json();
         clearInterval(progTimer);
@@ -509,6 +817,9 @@
         } else {
           result.innerHTML = `<div class="add-success">✅ ${data.status}</div>`;
           document.getElementById('songQuery').value = '';
+          selectedTrack = null;
+          // Auto-refresh the library
+          setTimeout(loadSongs, 500);
         }
         result.classList.add('show');
       } catch(e) {
@@ -522,10 +833,70 @@
       }
     }
 
-    // Allow Enter key on input
-    document.getElementById('songQuery').addEventListener('keydown', e => {
-      if (e.key === 'Enter') addSong();
-    });
+    // ── Song Library ──────────────────────────────────────
+    let allSongs = [];
+
+    async function loadSongs() {
+      const btn  = document.getElementById('refreshBtn');
+      const list = document.getElementById('songList');
+      btn.classList.add('spinning');
+
+      // Show skeletons while loading
+      list.innerHTML = '<div class="library-skeleton"></div><div class="library-skeleton"></div><div class="library-skeleton"></div>';
+
+      try {
+        const resp = await fetch('/songs');
+        const data = await resp.json();
+        allSongs = data.songs || [];
+        renderSongs(allSongs);
+        const count = allSongs.length;
+        document.getElementById('libraryCount').textContent =
+          count === 0 ? 'empty' : `${count} song${count !== 1 ? 's' : ''}`;
+      } catch(e) {
+        list.innerHTML = '<div class="library-empty"><span>⚠️</span>Could not load library.</div>';
+      } finally {
+        btn.classList.remove('spinning');
+      }
+    }
+
+    function renderSongs(songs) {
+      const list = document.getElementById('songList');
+      if (!songs.length) {
+        list.innerHTML = '<div class="library-empty"><span>🎵</span>No songs yet. Add one above!</div>';
+        return;
+      }
+      list.innerHTML = songs.map((s, i) => `
+        <div class="song-item">
+          <div class="song-num">${i + 1}</div>
+          <div class="song-info">
+            <div class="song-name" title="${esc(s.title)}">${esc(s.title)}</div>
+            <div class="song-artist" title="${esc(s.artist)}">${esc(s.artist)}</div>
+          </div>
+          ${s.youtube_id
+            ? `<a class="song-yt" href="https://www.youtube.com/watch?v=${esc(s.youtube_id)}" target="_blank" rel="noopener" title="Watch on YouTube">
+                <svg viewBox="0 0 24 24"><path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/></svg>
+               </a>`
+            : ''}
+        </div>
+      `).join('');
+    }
+
+    function filterSongs() {
+      const q = document.getElementById('librarySearch').value.toLowerCase().trim();
+      if (!q) { renderSongs(allSongs); return; }
+      const filtered = allSongs.filter(s =>
+        s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)
+      );
+      renderSongs(filtered);
+      document.getElementById('libraryCount').textContent =
+        `${filtered.length} / ${allSongs.length}`;
+    }
+
+    function esc(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+
   </script>
 </body>
 </html>

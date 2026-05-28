@@ -97,6 +97,16 @@ class SQLiteClient:
                 return None
             return {"title": row[0], "artist": row[1], "youtube_id": row[2]}
 
+    def get_all_songs(self):
+        """Return all songs sorted alphabetically by title."""
+        with closing(self.conn.cursor()) as cur:
+            cur.execute("SELECT id, title, artist, ytID FROM songs ORDER BY title COLLATE NOCASE ASC")
+            rows = cur.fetchall()
+            return [
+                {"id": r[0], "title": r[1], "artist": r[2], "youtube_id": r[3]}
+                for r in rows
+            ]
+
     def get_song_by_id(self, song_id):
         return self.get_song("id", song_id)
 

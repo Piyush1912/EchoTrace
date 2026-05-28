@@ -12,11 +12,15 @@ from services.youtube import download_ytaudio, get_youtube_id
 from core.storeNmatch import process_song
 
 
-def downloadViaLink(url_or_query: str):
+def downloadViaLink(url_or_query: str, title: str = None, artist: str = None, duration_sec: int = None):
     # 1. Get track metadata (iTunes or Deezer — no API key needed)
-    track = get_track_info(url_or_query)
-    if not track:
-        raise ValueError(f"Could not find track metadata for: {url_or_query}")
+    if title and artist:
+        from services.music_metadata import Track
+        track = Track(title=title, artist=artist, duration_sec=duration_sec or 0)
+    else:
+        track = get_track_info(url_or_query)
+        if not track:
+            raise ValueError(f"Could not find track metadata for: {url_or_query}")
 
     print(f"Title:    {track.title}")
     print(f"Artist:   {track.artist}")
